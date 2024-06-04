@@ -1,28 +1,23 @@
 
-const server = require('http').createServer();
 
-const io = require('socket.io')(server , {
+
+
+const http = require('http');
+const io = require('socket.io');
+
+const apiServer = require('./api');
+const httpServer = http.createServer(apiServer);
+const socketServer = io(httpServer, {
     cors: {
       origin: '*',
       methods: ['GET', 'POST']
     }
   });
 
+const sockets = require('./sockets');
+
 const PORT = 3000;
+httpServer.listen(PORT);
+console.log(`Listening on port ${PORT}...`);
 
-server.listen(PORT);
-console.log(`Listening on port ${PORT}...`)
-
-let readyPlayerCoujnt = 0;
-
-io.on('connection', (socket) => {
-    console.log('a user connected', socket.id);
-
-    socket.on('ready', () => {
-        console.log('Player ready', socket.id)
-        readyPlayerCoujnt++
-        if (readyPlayerCoujnt === 2){
-            io.emit('startGame', socket.id)
-        }
-    })
-})
+sockets.listen(socketServer);

@@ -1,7 +1,7 @@
 // Canvas Related 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3000/pong');
 let isReferee = false;
 let paddleIndex = 0;
 
@@ -101,6 +101,12 @@ function ballMove() {
   if (playerMoved) {
     ballX += speedX;
   }
+
+  socket.emit('ballMove', {
+    ballX,
+    ballY,
+    score
+  })
 }
 
 // Determine What Ball Bounces Off, Score Points, Reset Ball
@@ -161,9 +167,13 @@ function ballBoundaries() {
 
 // Called Every Frame
 function animate() {
-  ballMove();
+  if (isReferee){
+    ballMove()
+    ballBoundaries()
+  }
+
   renderCanvas();
-  ballBoundaries();
+
   window.requestAnimationFrame(animate);
 }
 
@@ -188,6 +198,9 @@ function startGame (){
     }
     // Hide Cursor
     canvas.style.cursor = 'none';
+    socket.emit('paddleMove', {
+      xPosition: paddleX[paddleIndex]
+    })
   });
 }
 
@@ -202,5 +215,16 @@ socket.on('startGame', (refereeId) => {
   console.log('Referee is', refereeId)
   isReferee = socket.id === refereeId;
   startGame();
+})
+
+
+socket.on('paddleMove', (paddleData) => {
+  // toggle
+  const opponentPaddleIndex = 1 - paddleIndex
+  paddleX[opponentPaddleIndex] = paddleData.xPosition
+})
+
+socket.on('ballMove', (ballData) => {
+  ({ballX, ballY, score} = ballData)
 })
 
